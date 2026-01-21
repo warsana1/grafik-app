@@ -6,20 +6,41 @@
 </head>
 <body class="bg-light">
 
-<div class="container mt-5">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <div class="container">
+        <a class="navbar-brand" href="#">Laporan Penjualan</a>
+        
+        <div class="ms-auto">
+            @auth
+                <span class="text-white me-3">Halo, {{ Auth::user()->name }}</span>
+                
+                <form method="POST" action="{{ route('logout') }}" class="d-inline">
+                    @csrf
+                    <button type="submit" class="btn btn-outline-light btn-sm">Logout</button>
+                </form>
+            @else
+                <a href="{{ route('login') }}" class="btn btn-outline-light btn-sm me-2">Login</a>
+                
+            @endauth
+        </div>
+    </div>
+</nav>
+
+<div class="container">
     <h2 class="text-center mb-4">Dashboard Penjualan</h2>
 
     <div class="card mb-4">
         <div class="card-header bg-primary text-white">Grafik Penjualan Harian</div>
         <div class="card-body">
             <canvas id="salesChart" height="100"
-    data-labels="{{ json_encode($labels) }}" 
-    data-values="{{ json_encode($data) }}">
-</canvas>
+                data-labels="{{ json_encode($labels) }}" 
+                data-values="{{ json_encode($data) }}">
+            </canvas>
         </div>
     </div>
 
     <div class="row">
+        @auth
         <div class="col-md-4">
             <div class="card">
                 <div class="card-header">Tambah Data</div>
@@ -43,8 +64,9 @@
                 </div>
             </div>
         </div>
+        @endauth
 
-        <div class="col-md-8">
+        <div class="{{ Auth::check() ? 'col-md-8' : 'col-md-12' }}">
             <div class="card">
                 <div class="card-header">Riwayat Transaksi</div>
                 <div class="card-body">
@@ -54,30 +76,32 @@
                                 <th>Tanggal</th>
                                 <th>Produk</th>
                                 <th>Jumlah</th>
-                                <th>Aksi</th>
+                                @auth 
+                                    <th>Aksi</th> 
+                                @endauth
                             </tr>
                         </thead>
                         <tbody>
-    @foreach($sales as $s)
-    <tr>
-        <td>{{ $s->transaction_date }}</td>
-        
-        <td>{{ $s->product_name }}</td>
-        
-        <td>Rp {{ number_format($s->amount) }}</td>
-        
-        <td>
-            <a href="{{ route('sales.edit', $s->id) }}" class="btn btn-warning btn-sm">Edit</a>
+                            @foreach($sales as $s)
+                            <tr>
+                                <td>{{ $s->transaction_date }}</td>
+                                <td>{{ $s->product_name }}</td>
+                                <td>Rp {{ number_format($s->amount) }}</td>
+                                
+                                @auth
+                                <td>
+                                    <a href="{{ route('sales.edit', $s->id) }}" class="btn btn-warning btn-sm">Edit</a>
 
-            <form action="{{ route('sales.destroy', $s->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin hapus data?')">
-                @csrf
-                @method('DELETE')
-                <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
-            </form>
-        </td>
-    </tr>
-    @endforeach
-</tbody>
+                                    <form action="{{ route('sales.destroy', $s->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin hapus data?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
+                                    </form>
+                                </td>
+                                @endauth
+                            </tr>
+                            @endforeach
+                        </tbody>
                     </table>
                 </div>
             </div>
@@ -86,17 +110,15 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     // 1. Ambil elemen canvas dari HTML
     const canvas = document.getElementById('salesChart');
 
     // 2. Ambil data mentah dari atribut 'data-...' lalu ubah kembali jadi Array JS
-    // dataset.labels otomatis mengambil isi dari data-labels
     const chartLabels = JSON.parse(canvas.dataset.labels);
     const chartData = JSON.parse(canvas.dataset.values);
 
-    // 3. Buat Chart dengan data yang sudah bersih
+    // 3. Buat Chart
     const ctx = canvas.getContext('2d');
     const salesChart = new Chart(ctx, {
         type: 'bar',
@@ -115,7 +137,6 @@
                 y: {
                     beginAtZero: true,
                     ticks: {
-                        // Opsi tambahan: Format angka jadi Rupiah di sumbu Y
                         callback: function(value) {
                             return 'Rp ' + new Intl.NumberFormat('id-ID').format(value);
                         }
