@@ -20,7 +20,7 @@
                 </form>
             @else
                 <a href="{{ route('login') }}" class="btn btn-outline-light btn-sm me-2">Login</a>
-                <a href="{{ route('register') }}" class="btn btn-warning btn-sm">Daftar</a>
+                
                 
             @endauth
         </div>
